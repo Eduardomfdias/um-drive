@@ -14,7 +14,7 @@ env/
 # Storage
 storage/*
 !storage/.gitkeep
-!storage/metadata.json  # ← ADICIONAR ISTO (para versionar metadata)
+!storage/metadata.json  
 
 # OS
 .DS_Store
