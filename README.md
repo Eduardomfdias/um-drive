@@ -57,3 +57,4 @@ um-drive/
 - `GET /api/files/{id}` - Download ficheiro
 - `PUT /api/files/{id}` - Atualizar ficheiro
 - `DELETE /api/files/{id}` - Apagar ficheiro
+- test
