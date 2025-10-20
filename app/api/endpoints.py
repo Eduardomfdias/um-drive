@@ -40,19 +40,21 @@ async def download_file(file_id: str):
 @router.put("/files/{file_id}", response_model=FileResponse)
 async def update_file(file_id: str, file: UploadFile = File(...)):
     """Atualizar ficheiro existente"""
-    # Apagar o antigo
-    if not FileService.delete_file(file_id):
+    content = await file.read()
+    
+    metadata = FileService.update_file(
+        file_id=file_id,
+        file_content=content,
+        filename=file.filename,
+        content_type=file.content_type
+    )
+    
+    if metadata is None:
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Criar novo com o mesmo ID
-    content = await file.read()
-    import shutil
-    filepath = f"storage/{file_id}"
-    with open(filepath, 'wb') as f:
-        f.write(content)
-    
     return FileResponse(
-        message="File updated successfully"
+        message="File updated successfully",
+        file=metadata
     )
 
 @router.delete("/files/{file_id}", response_model=FileResponse)

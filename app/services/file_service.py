@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 from app.models.file import FileMetadata
+from app.services.metadata_service import MetadataService
 
 STORAGE_PATH = "storage"
 
@@ -18,7 +19,7 @@ class FileService:
         with open(filepath, 'wb') as f:
             f.write(file_content)
         
-        # Criar metadata
+        # Criar e guardar metadata
         metadata = FileMetadata(
             id=file_id,
             filename=filename,
@@ -26,26 +27,14 @@ class FileService:
             upload_date=datetime.now(),
             content_type=content_type
         )
+        MetadataService.save_metadata(metadata)
         
         return metadata
     
     @staticmethod
     def list_files() -> List[FileMetadata]:
         """Lista todos os ficheiros"""
-        files = []
-        for filename in os.listdir(STORAGE_PATH):
-            if filename == '.gitkeep':
-                continue
-            filepath = os.path.join(STORAGE_PATH, filename)
-            stat = os.stat(filepath)
-            files.append(FileMetadata(
-                id=filename,
-                filename=filename,
-                size=stat.st_size,
-                upload_date=datetime.fromtimestamp(stat.st_mtime),
-                content_type="application/octet-stream"
-            ))
-        return files
+        return MetadataService.list_metadata()
     
     @staticmethod
     def get_file(file_id: str) -> Optional[bytes]:
@@ -58,6 +47,29 @@ class FileService:
             return f.read()
     
     @staticmethod
+    def update_file(file_id: str, file_content: bytes, filename: str, content_type: str) -> Optional[FileMetadata]:
+        """Atualiza ficheiro existente"""
+        filepath = os.path.join(STORAGE_PATH, file_id)
+        if not os.path.exists(filepath):
+            return None
+        
+        # Atualizar ficheiro
+        with open(filepath, 'wb') as f:
+            f.write(file_content)
+        
+        # Atualizar metadata
+        metadata = FileMetadata(
+            id=file_id,
+            filename=filename,
+            size=len(file_content),
+            upload_date=datetime.now(),
+            content_type=content_type
+        )
+        MetadataService.save_metadata(metadata)
+        
+        return metadata
+    
+    @staticmethod
     def delete_file(file_id: str) -> bool:
         """Apaga ficheiro"""
         filepath = os.path.join(STORAGE_PATH, file_id)
@@ -65,4 +77,5 @@ class FileService:
             return False
         
         os.remove(filepath)
+        MetadataService.delete_metadata(file_id)
         return True
