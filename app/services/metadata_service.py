@@ -3,7 +3,7 @@ import os
 from typing import Dict, Optional
 from app.models.file import FileMetadata
 
-METADATA_FILE = "storage/metadata.json"
+METADATA_FILE = "/srv/nfs/umdrive/metadata.json"
 
 class MetadataService:
     
