@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  um-drive-api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: um-drive-api-1
+    ports:
+      - "8001:8000"
+    volumes:
+      - /mnt/nfs-storage:/mnt/nfs-storage
+    environment:
+      - STORAGE_PATH=/mnt/nfs-storage
+      - API_INSTANCE=1
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  um-drive-api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: um-drive-api-2
+    ports:
+      - "8002:8000"
+    volumes:
+      - /mnt/nfs-storage:/mnt/nfs-storage
+    environment:
+      - STORAGE_PATH=/mnt/nfs-storage
+      - API_INSTANCE=2
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  um-drive-api-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: um-drive-api-3
+    ports:
+      - "8003:8000"
+    volumes:
+      - /mnt/nfs-storage:/mnt/nfs-storage
+    environment:
+      - STORAGE_PATH=/mnt/nfs-storage
+      - API_INSTANCE=3
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: um-drive-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - um-drive-api-1
+      - um-drive-api-2
+      - um-drive-api-3
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+networks:
+  um-drive-network:
+    driver: bridge

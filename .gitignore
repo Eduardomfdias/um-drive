@@ -4,18 +4,51 @@ __pycache__/
 *$py.class
 *.so
 .Python
+
+# Virtual Environment
 venv/
 env/
+ENV/
+.venv
 
 # IDE
 .vscode/
 .idea/
-
-# Storage
-storage/*
-!storage/.gitkeep
-!storage/metadata.json  
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Storage & Logs
+storage/
+*.log
+logs/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
+# Docker volumes
+.docker/
+
+# Test files
+teste*.txt
+test*.txt
+docker-test.txt
+docker-upload.txt
+*-test-*.txt
+
+# Metadata files (gerados pela API)
+metadata.json
+
+# Backups
+*.tar.gz
+*.zip
+*.bak
+
+# Scripts auxiliares temporários
+get-docker.sh
