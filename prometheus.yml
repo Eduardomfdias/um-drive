@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'um-drive-api'
+    static_configs:
+      - targets: ['um-drive-api-1:8000', 'um-drive-api-2:8000', 'um-drive-api-3:8000']

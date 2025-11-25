@@ -6,13 +6,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: um-drive-api-1
-    ports:
-      - "8001:8000"
     volumes:
-      - /mnt/nfs-storage:/mnt/nfs-storage
+      - /mnt/nfs_share:/mnt/nfs_share
     environment:
-      - STORAGE_PATH=/mnt/nfs-storage
+      - STORAGE_PATH=/mnt/nfs_share
       - API_INSTANCE=1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.um-drive.rule=Host(`localhost`)"
+      - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
     networks:
       - um-drive-network
     restart: unless-stopped
@@ -22,13 +24,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: um-drive-api-2
-    ports:
-      - "8002:8000"
     volumes:
-      - /mnt/nfs-storage:/mnt/nfs-storage
+      - /mnt/nfs_share:/mnt/nfs_share
     environment:
-      - STORAGE_PATH=/mnt/nfs-storage
+      - STORAGE_PATH=/mnt/nfs_share
       - API_INSTANCE=2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.um-drive.rule=Host(`localhost`)"
+      - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
     networks:
       - um-drive-network
     restart: unless-stopped
@@ -38,28 +42,78 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: um-drive-api-3
-    ports:
-      - "8003:8000"
     volumes:
-      - /mnt/nfs-storage:/mnt/nfs-storage
+      - /mnt/nfs_share:/mnt/nfs_share
     environment:
-      - STORAGE_PATH=/mnt/nfs-storage
+      - STORAGE_PATH=/mnt/nfs_share
       - API_INSTANCE=3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.um-drive.rule=Host(`localhost`)"
+      - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
     networks:
       - um-drive-network
     restart: unless-stopped
 
-  nginx:
-    image: nginx:alpine
-    container_name: um-drive-nginx
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
+      - "8081:8080"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - um-drive-api-1
-      - um-drive-api-2
-      - um-drive-api-3
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - um-drive-network
     restart: unless-stopped
@@ -67,3 +121,7 @@ services:
 networks:
   um-drive-network:
     driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

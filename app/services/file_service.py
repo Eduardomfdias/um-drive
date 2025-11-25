@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.models.file import FileMetadata
 from app.services.metadata_service import MetadataService
 
-STORAGE_PATH = "/mnt/nfs-storage"
+STORAGE_PATH = "/mnt/nfs_share"
 
 class FileService:
     

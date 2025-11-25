@@ -3,7 +3,7 @@ import os
 from typing import Dict, Optional
 from app.models.file import FileMetadata
 
-METADATA_FILE = "/mnt/nfs-storage/metadata.json"
+METADATA_FILE = "/mnt/nfs_share/metadata.json"
 
 class MetadataService:
     
