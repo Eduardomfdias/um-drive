@@ -1,6 +1,14 @@
 global:
   scrape_interval: 15s
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - 'prometheus-alerts.yml'
+
 scrape_configs:
   - job_name: 'cadvisor'
     static_configs:
@@ -8,4 +16,7 @@ scrape_configs:
 
   - job_name: 'um-drive-api'
     static_configs:
-      - targets: ['um-drive-api-1:8000', 'um-drive-api-2:8000', 'um-drive-api-3:8000']
+      - targets: 
+          - 'um-drive-api-1:8000'
+          - 'um-drive-api-2:8000'
+          - 'um-drive-api-3:8000'

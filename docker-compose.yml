@@ -97,6 +97,7 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro  # <-- ADICIONAR ESTA LINHA
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -118,6 +119,21 @@ services:
       - um-drive-network
     restart: unless-stopped
 
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    networks:
+      - um-drive-network
+    restart: unless-stopped
+
 networks:
   um-drive-network:
     driver: bridge
@@ -125,3 +141,4 @@ networks:
 volumes:
   prometheus-data:
   grafana-data:
+  alertmanager-data:

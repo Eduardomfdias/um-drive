@@ -1,0 +1,29 @@
+groups:
+  - name: container_alerts
+    rules:
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name=~"um-drive-api.*"}[5m]) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} high CPU"
+          description: "CPU usage > 80% for 2 minutes"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{name=~"um-drive-api.*"} > 500000000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} high memory"
+          description: "Memory usage > 500MB"
+
+      - alert: ContainerDown
+        expr: up{job="um-drive-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container is down"
+          description: "Container {{ $labels.instance }} is not responding"
