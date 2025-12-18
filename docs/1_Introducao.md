@@ -13,43 +13,35 @@ O **UM Drive** é um sistema de armazenamento de ficheiros distribuído desenvol
 ---
 
 ## 2. Arquitetura Final
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         UM DRIVE SYSTEM                         │
-└─────────────────────────────────────────────────────────────────┘
 
-                    ┌──────────────────────┐
-                    │   USER (Browser)     │
-                    │   localhost:80       │
-                    └──────────┬───────────┘
-                               │
-                               ▼
-                    ┌──────────────────────┐
-                    │   Traefik (port 80)  │
-                    │   Dynamic LB         │
-                    └──────────┬───────────┘
-                               │
-         ┌─────────────────────┼─────────────────────┐
-         ▼                     ▼                     ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│  FastAPI #1     │  │  FastAPI #2     │  │  FastAPI #3     │
-│  (Container)    │  │  (Container)    │  │  (Container)    │
-└────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-         │                    │                     │
-         └────────────────────┼─────────────────────┘
-                              │
-                              ▼
-                    ┌──────────────────────┐
-                    │   NFS SHARED STORAGE │
-                    │   ZFS (192.168.0.2)  │
-                    │   /mnt/nfs_share     │
-                    └──────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    MONITORING STACK                             │
-└─────────────────────────────────────────────────────────────────┘
-    cAdvisor → Prometheus → Grafana
-    (métricas)  (storage)   (dashboards)
+```mermaid
+flowchart TD
+    User[User Browser<br/>localhost:80] --> Traefik[Traefik Load Balancer<br/>Port 80]
+    
+    Traefik --> API1[FastAPI Replica 1<br/>Container]
+    Traefik --> API2[FastAPI Replica 2<br/>Container]
+    Traefik --> API3[FastAPI Replica 3<br/>Container]
+    
+    API1 --> NFS[NFS Shared Storage<br/>ZFS - 192.168.0.2<br/>/mnt/nfs_share]
+    API2 --> NFS
+    API3 --> NFS
+    
+    API1 -.->|metrics| Prometheus
+    API2 -.->|metrics| Prometheus
+    API3 -.->|metrics| Prometheus
+    
+    cAdvisor[cAdvisor] -.->|container metrics| Prometheus[Prometheus<br/>Port 9090]
+    Prometheus --> Grafana[Grafana<br/>Port 3000]
+    Prometheus --> AlertManager[AlertManager<br/>Port 9093]
+    
+    style User fill:#e1f5ff
+    style Traefik fill:#ffe1e1
+    style API1 fill:#e1ffe1
+    style API2 fill:#e1ffe1
+    style API3 fill:#e1ffe1
+    style NFS fill:#fff4e1
+    style Grafana fill:#f0e1ff
+    style Prometheus fill:#f0e1ff
 ```
 
 ---
@@ -68,6 +60,25 @@ O **UM Drive** é um sistema de armazenamento de ficheiros distribuído desenvol
 ---
 
 ## 4. Infraestrutura
+
+```mermaid
+graph LR
+    subgraph VM1[VM 1 - NFS Server<br/>192.168.0.2]
+        ZFS[ZFS Pool] --> NFS_Export[NFS Export<br/>/mnt/nfs_share]
+    end
+    
+    subgraph VM2[VM 2 - Application Server<br/>192.168.0.3]
+        NFS_Client[NFS Client Mount] --> Docker[Docker Compose]
+        Docker --> API_Group[FastAPI Replicas x3]
+        Docker --> Traefik_LB[Traefik LB]
+        Docker --> Monitor[Monitoring Stack]
+    end
+    
+    NFS_Export -.->|NFS Protocol| NFS_Client
+    
+    style VM1 fill:#fff4e1
+    style VM2 fill:#e1f5ff
+```
 
 ### **VM 1 - NFS Server (192.168.0.2)**
 - ZFS pool para storage
@@ -94,6 +105,5 @@ O **UM Drive** é um sistema de armazenamento de ficheiros distribuído desenvol
 
 ---
 
-**Data:** Novembro 2025  
-**Curso:** Engenharia de Sistemas de Informação  
+**Curso:** Mestrado em Engenharia e Gestão de Sistemas de Informação  
 **UC:** Infraestruturas e Tecnologias de Informação (ITI)

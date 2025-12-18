@@ -8,7 +8,7 @@
 - Operações CRUD básicas
 - Validação funcional
 
-**Status:** ✅ Completado
+**Status:** Completado
 
 ---
 
@@ -18,7 +18,7 @@
 - Isolamento de aplicação
 - Docker Compose para orquestração local
 
-**Status:** ✅ Completado
+**Status:** Completado
 
 **Ficheiros:**
 - `Dockerfile`
@@ -42,7 +42,7 @@
   - Mount point: `/mnt/nfs_share`
   - Persistente via `/etc/fstab`
 
-**Status:** ✅ Completado
+**Status:** Completado
 
 ---
 
@@ -53,26 +53,16 @@
 - Health checks integrados
 
 **Justificação Traefik vs NGINX:**
-- ✅ Auto-discovery de containers (sem configuração manual)
-- ✅ Dashboard web integrado
-- ✅ Configuração via labels Docker
-- ✅ Melhor para ambientes cloud-native
+- Auto-discovery de containers (sem configuração manual)
+- Dashboard web integrado
+- Configuração via labels Docker
+- Melhor para ambientes cloud-native
 
-**Status:** ✅ Completado
-
----
-
-### **Fase 4: Orquestração Avançada (Kubernetes)**
-**Status:** ❌ Não implementado (fora do scope do projeto)
-
-**Justificação:**
-- Complexidade elevada para prazo disponível
-- Docker Compose suficiente para demonstrar conceitos distribuídos
-- Possível melhoria futura
+**Status:** Completado
 
 ---
 
-### **Fase 5: Observabilidade e Monitorização**
+### **Fase 4: Observabilidade e Monitorização**
 Stack de monitorização completa implementada:
 
 **Componentes:**
@@ -90,14 +80,25 @@ Stack de monitorização completa implementada:
    - Dashboards personalizáveis
    - Alerting (configurável)
 
+4. **AlertManager (porta 9093)**
+   - Gestão de alertas
+   - Notificações configuráveis
+
+5. **Prometheus Instrumentator**
+   - Métricas da aplicação FastAPI
+   - Request rate, latência, erros
+   - Expõe endpoint `/metrics`
+
 **Métricas Monitorizadas:**
 - CPU por container
 - Memória (usage, limits)
 - Network I/O
 - Disk I/O
 - Uptime dos serviços
+- Request rate e latência da API
+- HTTP status codes
 
-**Status:** ✅ Completado
+**Status:** Completado
 
 ---
 
@@ -105,12 +106,11 @@ Stack de monitorização completa implementada:
 
 | Fase | Descrição | Status |
 |------|-----------|--------|
-| 0 | Monolítico (PoC) | ✅ |
-| 1 | Containerização | ✅ |
-| 2 | NFS Storage | ✅ |
-| 3 | Load Balancing (Traefik) | ✅ |
-| 4 | Kubernetes | ❌ (scope) |
-| 5 | Monitorização | ✅ |
+| 0 | Monolítico (PoC) | Completado |
+| 1 | Containerização | Completado |
+| 2 | NFS Storage | Completado |
+| 3 | Load Balancing (Traefik) | Completado |
+| 4 | Monitorização | Completado |
 
 ---
 

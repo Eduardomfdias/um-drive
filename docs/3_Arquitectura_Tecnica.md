@@ -1,27 +1,49 @@
 # 3. Arquitetura Técnica
 
 ## Diagrama de Rede
+
+```mermaid
+graph TB
+    subgraph Host[VirtualBox Host]
+        subgraph VM1[VM 1: NFS Server<br/>192.168.0.2]
+            ZFS[ZFS Storage<br/>tank/storage]
+            NFS_Server[NFS Server<br/>/mnt/nfs_share]
+            ZFS --> NFS_Server
+        end
+        
+        subgraph VM2[VM 2: UM Drive<br/>192.168.0.3]
+            NFS_Client[NFS Client Mount<br/>/mnt/nfs_share]
+            
+            subgraph Docker[Docker Compose]
+                API1[FastAPI 1]
+                API2[FastAPI 2]
+                API3[FastAPI 3]
+                Traefik[Traefik LB]
+                Monitor[Monitoring Stack]
+            end
+            
+            NFS_Client --> API1
+            NFS_Client --> API2
+            NFS_Client --> API3
+        end
+        
+        NFS_Server -.->|NFS Protocol| NFS_Client
+        
+        PortFwd[Port Forwarding]
+        PortFwd --> VM2
+    end
+    
+    style VM1 fill:#fff4e1
+    style VM2 fill:#e1f5ff
+    style Docker fill:#e1ffe1
 ```
-┌────────────────────────────────────────────────────────────┐
-│                    HOST (VirtualBox)                       │
-│                                                            │
-│  ┌──────────────────┐         ┌──────────────────┐       │
-│  │  VM 1: NFS       │         │  VM 2: UM Drive  │       │
-│  │  192.168.0.2     │◄────────┤  192.168.0.3     │       │
-│  │                  │  NFS    │                  │       │
-│  │  - ZFS Storage   │         │  - 3x FastAPI    │       │
-│  │  - NFS Server    │         │  - Traefik       │       │
-│  │  /mnt/nfs_share  │         │  - Monitoring    │       │
-│  └──────────────────┘         └──────────────────┘       │
-│                                                            │
-│  Port Forwarding:                                         │
-│  - 80 → 192.168.0.3:80 (UM Drive API)                    │
-│  - 3000 → 192.168.0.3:3000 (Grafana)                     │
-│  - 8080 → 192.168.0.3:8080 (cAdvisor)                    │
-│  - 8081 → 192.168.0.3:8081 (Traefik Dashboard)           │
-│  - 9090 → 192.168.0.3:9090 (Prometheus)                  │
-└────────────────────────────────────────────────────────────┘
-```
+
+**Port Forwarding Host → VM2:**
+- `80` → UM Drive API
+- `3000` → Grafana
+- `8080` → cAdvisor
+- `8081` → Traefik Dashboard
+- `9090` → Prometheus
 
 ---
 
@@ -132,23 +154,45 @@ grafana:
 ## Fluxo de Dados
 
 ### **Upload de Ficheiro**
-```
-1. Cliente → HTTP POST /upload → Traefik (port 80)
-2. Traefik → Round-robin → FastAPI container (1, 2 ou 3)
-3. FastAPI → Guarda ficheiro → /mnt/nfs_share (NFS mount)
-4. NFS Client → Rede → NFS Server (192.168.0.2)
-5. NFS Server → Escreve em ZFS → /mnt/nfs_share
-6. FastAPI → Guarda metadados → metadata.json (NFS)
-7. FastAPI → Resposta → Cliente (200 OK)
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant T as Traefik
+    participant A as FastAPI
+    participant N as NFS Client
+    participant Z as ZFS/NFS Server
+    
+    C->>T: POST /api/files
+    T->>A: Round-robin
+    A->>N: Escrever ficheiro
+    N->>Z: NFS write
+    Z-->>N: OK
+    A->>N: Guardar metadata.json
+    N->>Z: NFS write
+    Z-->>N: OK
+    A-->>C: 200 OK + metadata
 ```
 
 ### **Download de Ficheiro**
-```
-1. Cliente → HTTP GET /download/{file_id} → Traefik
-2. Traefik → Load balance → FastAPI container
-3. FastAPI → Lê metadata.json (NFS)
-4. FastAPI → Lê ficheiro (NFS)
-5. FastAPI → Stream → Cliente
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant T as Traefik
+    participant A as FastAPI
+    participant N as NFS Client
+    participant Z as ZFS/NFS Server
+    
+    C->>T: GET /api/files/{id}
+    T->>A: Load balance
+    A->>N: Ler metadata.json
+    N->>Z: NFS read
+    Z-->>N: metadata
+    A->>N: Ler ficheiro
+    N->>Z: NFS read
+    Z-->>N: file content
+    A-->>C: 200 OK + file stream
 ```
 
 ### **Monitorização**
@@ -165,14 +209,14 @@ grafana:
 ## Persistência e Recuperação
 
 ### **Dados**
-- ✅ Ficheiros: NFS share (persistente entre reboots)
-- ✅ Metadados: `metadata.json` no NFS
-- ✅ Métricas: Prometheus volumes Docker
+- Ficheiros: NFS share (persistente entre reboots)
+- Metadados: `metadata.json` no NFS
+- Métricas: Prometheus volumes Docker
 
 ### **Configuração**
-- ✅ NFS mount: `/etc/fstab` (automático no boot)
-- ✅ Containers: `restart: unless-stopped`
-- ✅ Network: `/etc/netplan/01-netcfg.yaml`
+- NFS mount: `/etc/fstab` (automático no boot)
+- Containers: `restart: unless-stopped`
+- Network: `/etc/netplan/01-netcfg.yaml`
 
 ### **Teste de Recuperação**
 ```bash
