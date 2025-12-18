@@ -1,5 +1,44 @@
 # 6. Testes
 
+## Testes Unitários
+
+### Executar
+```bash
+# Instalar dependências
+pip install --break-system-packages -r requirements.txt
+
+# Executar todos os testes
+pytest tests/ -v
+
+# Com coverage
+pytest tests/ --cov=app --cov-report=html
+```
+
+### Cobertura
+- **21 testes** (12 API + 9 File Service)
+- Endpoints CRUD completos
+- Health check
+- Casos de erro (404)
+- Concorrência
+
+### Resultados
+```
+tests/test_api.py::TestAPI::test_root_endpoint PASSED
+tests/test_api.py::TestAPI::test_health_endpoint PASSED
+tests/test_api.py::TestAPI::test_upload_file PASSED
+tests/test_api.py::TestAPI::test_download_file PASSED
+tests/test_api.py::TestAPI::test_update_file PASSED
+tests/test_api.py::TestAPI::test_delete_file PASSED
+tests/test_file_service.py::TestFileService::test_save_file PASSED
+tests/test_file_service.py::TestFileService::test_update_file PASSED
+tests/test_file_service.py::TestFileService::test_delete_file PASSED
+tests/test_file_service.py::TestFileService::test_concurrent_saves PASSED
+
+=================== 21 passed in 2.27s ===================
+```
+
+---
+
 ## Testes CRUD
 
 ### Upload
