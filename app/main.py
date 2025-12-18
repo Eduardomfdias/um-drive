@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.endpoints import router
+from prometheus_fastapi_instrumentator import Instrumentator
 import os
 
 # Criar pasta storage se não existir
@@ -13,6 +14,9 @@ app = FastAPI(
 
 # Incluir rotas
 app.include_router(router, prefix="/api", tags=["files"])
+
+# Instrumentar com Prometheus
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/")
 async def root():

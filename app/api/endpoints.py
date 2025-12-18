@@ -1,10 +1,28 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import Response
 from typing import List
+import os
 from app.models.file import FileMetadata, FileResponse
 from app.services.file_service import FileService
+from app.services.metadata_service import MetadataService
 
 router = APIRouter()
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint para Kubernetes/Docker"""
+    # Verificar NFS montado
+    storage_path = "/mnt/nfs_share"
+    if not os.path.exists(storage_path):
+        raise HTTPException(status_code=503, detail="Storage unavailable")
+    
+    # Verificar metadata acessível
+    try:
+        MetadataService._load()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Metadata unavailable: {str(e)}")
+    
+    return {"status": "healthy", "storage": "ok", "metadata": "ok"}
 
 @router.post("/files", response_model=FileResponse, status_code=201)
 async def upload_file(file: UploadFile = File(...)):

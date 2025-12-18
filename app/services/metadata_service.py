@@ -1,5 +1,6 @@
 import json
 import os
+import fcntl
 from typing import Dict, Optional
 from app.models.file import FileMetadata
 
@@ -9,20 +10,34 @@ class MetadataService:
     
     @staticmethod
     def _load() -> Dict[str, dict]:
-        """Carrega metadata do ficheiro JSON"""
+        """Carrega metadata do ficheiro JSON com shared lock"""
         if not os.path.exists(METADATA_FILE):
             return {}
         try:
             with open(METADATA_FILE, 'r') as f:
-                return json.load(f)
-        except:
+                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+                try:
+                    data = json.load(f)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                return data
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"Error loading metadata: {e}")
             return {}
     
     @staticmethod
     def _save(data: Dict[str, dict]):
-        """Guarda metadata no ficheiro JSON"""
-        with open(METADATA_FILE, 'w') as f:
-            json.dump(data, f, indent=2, default=str)
+        """Guarda metadata no ficheiro JSON com exclusive lock"""
+        try:
+            with open(METADATA_FILE, 'w') as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    json.dump(data, f, indent=2, default=str)
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        except (IOError, OSError) as e:
+            print(f"Error saving metadata: {e}")
+            raise
     
     @staticmethod
     def save_metadata(metadata: FileMetadata):
