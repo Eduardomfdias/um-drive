@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.1.0-production-ready] - 2025-12-22
+
+### Added
+- **SQLite** para metadados (substitui JSON)
+  - Transações ACID para integridade de dados
+  - Write-Ahead Logging (WAL) para concorrência
+  - Queries indexadas e performance otimizada
+- **4 novos alertas** no Prometheus:
+  - APIHighLatency (latência > 1s)
+  - APIHighErrorRate (> 5% erros 5xx)
+  - NoHealthyReplicas (< 2 APIs healthy)
+  - DiskSpaceNFS (storage > 80%)
+- Total de **7 alertas** configurados
+- Fixture `clean_db` para isolamento entre testes
+
+### Changed
+- Metadados: JSON → SQLite (`/mnt/nfs_share/metadata.db`)
+- Melhoria na integridade e consistência dos dados
+- File locking nativo da BD (substitui fcntl manual)
+
+### Technical Improvements
+- Base de dados relacional com suporte ACID
+- Timeout de 30s para operações concorrentes
+- Prepared statements contra SQL injection
+- Alerting abrangente (containers + API + storage)
+- 21/21 testes unitários a passar
+
+---
+
 ## [2.0.0-monitoring] - 2025-12-02
 
 ### Added
