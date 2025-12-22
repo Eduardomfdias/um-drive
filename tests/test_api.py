@@ -7,6 +7,13 @@ import os
 
 client = TestClient(app)
 
+@pytest.fixture(autouse=True)
+def clean_db():
+    """Limpar BD antes de cada teste"""
+    import app.services.metadata_service as ms_module
+    if hasattr(ms_module, 'DB_PATH') and os.path.exists(ms_module.DB_PATH):
+        os.remove(ms_module.DB_PATH)
+
 @pytest.fixture
 def temp_storage():
     """Setup storage temporário"""
@@ -15,7 +22,7 @@ def temp_storage():
     import app.services.file_service as fs_module
     import app.services.metadata_service as ms_module
     fs_module.STORAGE_PATH = temp_dir
-    ms_module.METADATA_FILE = os.path.join(temp_dir, 'metadata.json')
+    ms_module.DB_PATH = os.path.join(temp_dir, 'metadata.db')
     
     yield temp_dir
     

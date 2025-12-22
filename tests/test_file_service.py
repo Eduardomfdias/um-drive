@@ -11,20 +11,20 @@ def temp_storage():
     """Criar storage temporário para testes"""
     temp_dir = tempfile.mkdtemp()
     original_storage = FileService.STORAGE_PATH if hasattr(FileService, 'STORAGE_PATH') else '/mnt/nfs_share'
-    original_metadata = MetadataService.METADATA_FILE if hasattr(MetadataService, 'METADATA_FILE') else '/mnt/nfs_share/metadata.json'
+    original_db = MetadataService.DB_PATH if hasattr(MetadataService, 'DB_PATH') else '/mnt/nfs_share/metadata.db'
     
     # Override paths
     import app.services.file_service as fs_module
     import app.services.metadata_service as ms_module
     fs_module.STORAGE_PATH = temp_dir
-    ms_module.METADATA_FILE = os.path.join(temp_dir, 'metadata.json')
+    ms_module.DB_PATH = os.path.join(temp_dir, 'metadata.db')
     
     yield temp_dir
     
     # Cleanup
     shutil.rmtree(temp_dir)
     fs_module.STORAGE_PATH = original_storage
-    ms_module.METADATA_FILE = original_metadata
+    ms_module.DB_PATH = original_db
 
 
 class TestFileService:

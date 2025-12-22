@@ -108,6 +108,10 @@ curl -X DELETE http://localhost/api/files/{id}
 - HighCPUUsage (CPU > 80%)
 - HighMemoryUsage (Memória > 500MB)
 - ContainerDown (container offline)
+- APIHighLatency (latência > 1s)
+- APIHighErrorRate (> 5% erros 5xx)
+- NoHealthyReplicas (< 2 APIs up)
+- DiskSpaceNFS (storage > 80%)
 
 ---
 
@@ -154,8 +158,8 @@ um-drive/
 **Armazenamento:**
 - NFS partilhado entre réplicas
 - ZFS com compressão e snapshots
-- File locking (concorrência segura)
-- Metadados em JSON
+- SQLite para metadados (transações ACID)
+- File locking nativo da BD
 
 **Observabilidade:**
 - Métricas de containers (cAdvisor)

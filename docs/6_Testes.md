@@ -20,21 +20,33 @@ pytest tests/ --cov=app --cov-report=html
 - Health check
 - Casos de erro (404)
 - Concorrência
+- Isolamento entre testes (fixture `clean_db`)
 
 ### Resultados
 ```
 tests/test_api.py::TestAPI::test_root_endpoint PASSED
 tests/test_api.py::TestAPI::test_health_endpoint PASSED
 tests/test_api.py::TestAPI::test_upload_file PASSED
+tests/test_api.py::TestAPI::test_list_files_empty PASSED
+tests/test_api.py::TestAPI::test_list_files_with_content PASSED
 tests/test_api.py::TestAPI::test_download_file PASSED
+tests/test_api.py::TestAPI::test_download_nonexistent_file PASSED
 tests/test_api.py::TestAPI::test_update_file PASSED
+tests/test_api.py::TestAPI::test_update_nonexistent_file PASSED
 tests/test_api.py::TestAPI::test_delete_file PASSED
+tests/test_api.py::TestAPI::test_delete_nonexistent_file PASSED
+tests/test_api.py::TestAPI::test_metrics_endpoint PASSED
 tests/test_file_service.py::TestFileService::test_save_file PASSED
+tests/test_file_service.py::TestFileService::test_get_file PASSED
+tests/test_file_service.py::TestFileService::test_get_nonexistent_file PASSED
+tests/test_file_service.py::TestFileService::test_list_files PASSED
 tests/test_file_service.py::TestFileService::test_update_file PASSED
+tests/test_file_service.py::TestFileService::test_update_nonexistent_file PASSED
 tests/test_file_service.py::TestFileService::test_delete_file PASSED
+tests/test_file_service.py::TestFileService::test_delete_nonexistent_file PASSED
 tests/test_file_service.py::TestFileService::test_concurrent_saves PASSED
 
-=================== 21 passed in 2.27s ===================
+=================== 21 passed in 3.75s ===================
 ```
 
 ---

@@ -1,78 +1,114 @@
-import json
+import sqlite3
 import os
-import fcntl
-from typing import Dict, Optional
+from typing import Optional
+from datetime import datetime
 from app.models.file import FileMetadata
 
-METADATA_FILE = "/mnt/nfs_share/metadata.json"
+DB_PATH = "/mnt/nfs_share/metadata.db"
 
 class MetadataService:
     
     @staticmethod
-    def _load() -> Dict[str, dict]:
-        """Carrega metadata do ficheiro JSON com shared lock"""
-        if not os.path.exists(METADATA_FILE):
-            return {}
-        try:
-            with open(METADATA_FILE, 'r') as f:
-                fcntl.flock(f.fileno(), fcntl.LOCK_SH)
-                try:
-                    data = json.load(f)
-                finally:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-                return data
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Error loading metadata: {e}")
-            return {}
+    def _init_db():
+        """Inicializa base de dados SQLite"""
+        conn = sqlite3.connect(DB_PATH, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")  # Write-Ahead Logging para concorrência
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS files (
+                id TEXT PRIMARY KEY,
+                filename TEXT NOT NULL,
+                size INTEGER NOT NULL,
+                upload_date TEXT NOT NULL,
+                content_type TEXT NOT NULL
+            )
+        """)
+        conn.commit()
+        conn.close()
     
     @staticmethod
-    def _save(data: Dict[str, dict]):
-        """Guarda metadata no ficheiro JSON com exclusive lock"""
-        try:
-            with open(METADATA_FILE, 'w') as f:
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                try:
-                    json.dump(data, f, indent=2, default=str)
-                finally:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-        except (IOError, OSError) as e:
-            print(f"Error saving metadata: {e}")
-            raise
+    def _get_connection():
+        """Retorna conexão SQLite com timeout para concorrência"""
+        if not os.path.exists(DB_PATH):
+            MetadataService._init_db()
+        return sqlite3.connect(DB_PATH, timeout=30)
     
     @staticmethod
     def save_metadata(metadata: FileMetadata):
         """Adiciona/atualiza metadata de um ficheiro"""
-        data = MetadataService._load()
-        data[metadata.id] = {
-            "id": metadata.id,
-            "filename": metadata.filename,
-            "size": metadata.size,
-            "upload_date": metadata.upload_date.isoformat(),
-            "content_type": metadata.content_type
-        }
-        MetadataService._save(data)
+        conn = MetadataService._get_connection()
+        try:
+            conn.execute("""
+                INSERT OR REPLACE INTO files (id, filename, size, upload_date, content_type)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                metadata.id,
+                metadata.filename,
+                metadata.size,
+                metadata.upload_date.isoformat(),
+                metadata.content_type
+            ))
+            conn.commit()
+        finally:
+            conn.close()
     
     @staticmethod
     def get_metadata(file_id: str) -> Optional[FileMetadata]:
         """Obtém metadata de um ficheiro"""
-        data = MetadataService._load()
-        if file_id not in data:
-            return None
-        item = data[file_id]
-        return FileMetadata(**item)
+        conn = MetadataService._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT id, filename, size, upload_date, content_type FROM files WHERE id = ?",
+                (file_id,)
+            )
+            row = cursor.fetchone()
+            if row is None:
+                return None
+            return FileMetadata(
+                id=row[0],
+                filename=row[1],
+                size=row[2],
+                upload_date=datetime.fromisoformat(row[3]),
+                content_type=row[4]
+            )
+        finally:
+            conn.close()
     
     @staticmethod
     def list_metadata() -> list:
         """Lista metadata de todos os ficheiros"""
-        data = MetadataService._load()
-        return [FileMetadata(**item) for item in data.values()]
+        conn = MetadataService._get_connection()
+        try:
+            cursor = conn.execute(
+                "SELECT id, filename, size, upload_date, content_type FROM files ORDER BY upload_date DESC"
+            )
+            rows = cursor.fetchall()
+            return [
+                FileMetadata(
+                    id=row[0],
+                    filename=row[1],
+                    size=row[2],
+                    upload_date=datetime.fromisoformat(row[3]),
+                    content_type=row[4]
+                )
+                for row in rows
+            ]
+        finally:
+            conn.close()
     
     @staticmethod
     def delete_metadata(file_id: str) -> bool:
         """Remove metadata de um ficheiro"""
-        data = MetadataService._load()
-        if file_id not in data:
-            return False
-        del data[file_id]
-        MetadataService._save(data)
-        return True
+        conn = MetadataService._get_connection()
+        try:
+            cursor = conn.execute("DELETE FROM files WHERE id = ?", (file_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+        finally:
+            conn.close()
+    
+    @staticmethod
+    def _load():
+        """Método legacy para compatibilidade com health check"""
+        conn = MetadataService._get_connection()
+        conn.close()
+        return {}

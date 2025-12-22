@@ -27,3 +27,43 @@ groups:
         annotations:
           summary: "Container is down"
           description: "Container {{ $labels.instance }} is not responding"
+
+  - name: api_alerts
+    rules:
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API high latency detected"
+          description: "95th percentile latency > 1s for 3 minutes"
+
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API error rate too high"
+          description: "More than 5% of requests returning 5xx errors"
+
+      - alert: NoHealthyReplicas
+        expr: count(up{job="cadvisor", name=~"um-drive-api.*"} == 1) < 2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Insufficient healthy API replicas"
+          description: "Less than 2 API replicas are healthy"
+
+  - name: storage_alerts
+    rules:
+      - alert: DiskSpaceNFS
+        expr: (container_fs_usage_bytes{name=~"um-drive-api.*"} / container_fs_limit_bytes{name=~"um-drive-api.*"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "NFS storage space running low"
+          description: "Storage usage > 80% on {{ $labels.name }}"
