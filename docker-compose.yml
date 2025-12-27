@@ -17,9 +17,15 @@ services:
       - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie.name=um_drive_lb"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - um-drive-network
-    restart: unless-stopped
+    restart: always
 
   um-drive-api-2:
     build:
@@ -37,9 +43,15 @@ services:
       - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie.name=um_drive_lb"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - um-drive-network
-    restart: unless-stopped
+    restart: always
 
   um-drive-api-3:
     build:
@@ -57,9 +69,15 @@ services:
       - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.um-drive.loadbalancer.sticky.cookie.name=um_drive_lb"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - um-drive-network
-    restart: unless-stopped
+    restart: always
 
   traefik:
     image: traefik:v2.10
@@ -76,7 +94,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - um-drive-network
-    restart: unless-stopped
+    restart: always
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -92,7 +110,9 @@ services:
     privileged: true
     devices:
       - /dev/kmsg
-    restart: unless-stopped
+    networks:
+      - um-drive-network
+    restart: always
 
   prometheus:
     image: prom/prometheus:latest
@@ -106,7 +126,9 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-    restart: unless-stopped
+    networks:
+      - um-drive-network
+    restart: always
 
   grafana:
     image: grafana/grafana:latest
@@ -117,7 +139,9 @@ services:
       - grafana-data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    restart: unless-stopped
+    networks:
+      - um-drive-network
+    restart: always
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -130,7 +154,9 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
-    restart: unless-stopped
+    networks:
+      - um-drive-network
+    restart: always
 
 networks:
   um-drive-network:

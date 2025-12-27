@@ -44,6 +44,7 @@ graph TB
 - `8080` → cAdvisor
 - `8081` → Traefik Dashboard
 - `9090` → Prometheus
+- `9093` → AlertManager
 
 ---
 
@@ -108,6 +109,15 @@ um-drive-api-1/2/3:
   labels:
     - "traefik.enable=true"
     - "traefik.http.services.um-drive.loadbalancer.server.port=8000"
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+  networks:
+    - um-drive-network
+  restart: always
 ```
 
 #### **Traefik**
@@ -122,6 +132,9 @@ traefik:
     - "8081:8080"  # Dashboard
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
+  networks:
+    - um-drive-network
+  restart: always
 ```
 
 #### **Monitorização**
@@ -135,18 +148,37 @@ cadvisor:
     - /sys:/sys:ro
     - /var/lib/docker/:/var/lib/docker:ro
   privileged: true
+  networks:
+    - um-drive-network
+  restart: always
 
 prometheus:
   image: prom/prometheus:latest
   ports: ["9090:9090"]
   volumes:
     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./prometheus-alerts.yml:/etc/prometheus/prometheus-alerts.yml:ro
+  networks:
+    - um-drive-network
+  restart: always
 
 grafana:
   image: grafana/grafana:latest
   ports: ["3000:3000"]
   environment:
     - GF_SECURITY_ADMIN_PASSWORD=admin
+  networks:
+    - um-drive-network
+  restart: always
+
+alertmanager:
+  image: prom/alertmanager:latest
+  ports: ["9093:9093"]
+  volumes:
+    - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+  networks:
+    - um-drive-network
+  restart: always
 ```
 
 ---
@@ -215,7 +247,8 @@ sequenceDiagram
 
 ### **Configuração**
 - NFS mount: `/etc/fstab` (automático no boot)
-- Containers: `restart: unless-stopped`
+- Containers: `restart: always` (reiniciam automaticamente)
+- Health checks: Containers da API testados a cada 30s
 - Network: `/etc/netplan/01-netcfg.yaml`
 
 ### **Teste de Recuperação**
@@ -240,9 +273,19 @@ networks:
     driver: bridge
 ```
 
-**Containers na mesma rede podem comunicar por nome:**
+**Todos os serviços estão na rede `um-drive-network`:**
+- FastAPI réplicas (um-drive-api-1/2/3)
+- Traefik
+- cAdvisor
+- Prometheus
+- Grafana
+- AlertManager
+
+**Containers comunicam por nome:**
 - `prometheus` → `http://cadvisor:8080/metrics`
+- `prometheus` → `http://um-drive-api-1:8000/metrics`
 - `traefik` → `http://um-drive-api-1:8000`
+- `prometheus` → `http://alertmanager:9093`
 
 ### **VMs Network**
 - **Adapter 1:** NAT (acesso internet)

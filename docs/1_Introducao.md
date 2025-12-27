@@ -1,3 +1,4 @@
+```markdown
 # UM Drive - Sistema de Armazenamento Distribuído
 
 ## 1. Contexto e Objetivos
@@ -61,35 +62,39 @@ flowchart TD
 
 ## 4. Infraestrutura
 
+### VMs e Comunicação
+
+**VM 1 - NFS Server**
+- **IP:** 192.168.0.2
+- **Função:** Storage partilhado
+- **Componentes:**
+  - ZFS pool (`tank/storage`)
+  - Exportação NFS de `/mnt/nfs_share`
+  - Backup e snapshots automáticos
+
+**VM 2 - UM Drive Application**
+- **IP:** 192.168.0.3
+- **Função:** Aplicação distribuída
+- **Componentes:**
+  - 3 réplicas FastAPI (containers Docker)
+  - Traefik load balancer
+  - Stack de monitorização (cAdvisor, Prometheus, Grafana, AlertManager)
+  - Cliente NFS (mount em `/mnt/nfs_share`)
+
 ```mermaid
 graph LR
-    subgraph VM1[VM 1 - NFS Server<br/>192.168.0.2]
-        ZFS[ZFS Pool] --> NFS_Export[NFS Export<br/>/mnt/nfs_share]
-    end
+    NFS["NFS Server<br/>192.168.0.2<br/>/mnt/nfs_share"] -.->|NFS Protocol| Client["NFS Client<br/>192.168.0.3<br/>Mount: /mnt/nfs_share"]
     
-    subgraph VM2[VM 2 - Application Server<br/>192.168.0.3]
-        NFS_Client[NFS Client Mount] --> Docker[Docker Compose]
-        Docker --> API_Group[FastAPI Replicas x3]
-        Docker --> Traefik_LB[Traefik LB]
-        Docker --> Monitor[Monitoring Stack]
-    end
+    Client --> API["3x FastAPI<br/>Containers"]
+    Client --> LB["Traefik LB"]
+    Client --> MON["Monitoring<br/>Stack"]
     
-    NFS_Export -.->|NFS Protocol| NFS_Client
-    
-    style VM1 fill:#fff4e1
-    style VM2 fill:#e1f5ff
+    style NFS fill:#fff4e1
+    style Client fill:#e1f5ff
+    style API fill:#e1ffe1
+    style LB fill:#ffe1e1
+    style MON fill:#f0e1ff
 ```
-
-### **VM 1 - NFS Server (192.168.0.2)**
-- ZFS pool para storage
-- Exportação NFS de `/mnt/nfs_share`
-- Backup e snapshots
-
-### **VM 2 - UM Drive Application (192.168.0.3)**
-- 3 réplicas FastAPI (containers)
-- Traefik (load balancer)
-- Stack de monitorização (cAdvisor, Prometheus, Grafana)
-- Cliente NFS (mount em `/mnt/nfs_share`)
 
 ---
 
@@ -102,8 +107,10 @@ graph LR
 | Grafana | 3000 | http://localhost:3000 (admin/admin) |
 | Prometheus | 9090 | http://localhost:9090 |
 | cAdvisor | 8080 | http://localhost:8080 |
+| AlertManager | 9093 | http://localhost:9093 |
 
 ---
 
 **Curso:** Mestrado em Engenharia e Gestão de Sistemas de Informação  
 **UC:** Infraestruturas e Tecnologias de Informação (ITI)
+```
