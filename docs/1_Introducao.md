@@ -1,4 +1,3 @@
-```markdown
 # UM Drive - Sistema de Armazenamento Distribuído
 
 ## 1. Contexto e Objetivos
@@ -14,7 +13,6 @@ O **UM Drive** é um sistema de armazenamento de ficheiros distribuído desenvol
 ---
 
 ## 2. Arquitetura Final
-
 ```mermaid
 flowchart TD
     User[User Browser<br/>localhost:80] --> Traefik[Traefik Load Balancer<br/>Port 80]
@@ -80,7 +78,6 @@ flowchart TD
   - Traefik load balancer
   - Stack de monitorização (cAdvisor, Prometheus, Grafana, AlertManager)
   - Cliente NFS (mount em `/mnt/nfs_share`)
-
 ```mermaid
 graph LR
     NFS["NFS Server<br/>192.168.0.2<br/>/mnt/nfs_share"] -.->|NFS Protocol| Client["NFS Client<br/>192.168.0.3<br/>Mount: /mnt/nfs_share"]
@@ -113,4 +110,3 @@ graph LR
 
 **Curso:** Mestrado em Engenharia e Gestão de Sistemas de Informação  
 **UC:** Infraestruturas e Tecnologias de Informação (ITI)
-```
