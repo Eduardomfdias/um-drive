@@ -101,10 +101,11 @@ flowchart TB
     
     Admin -->|"UC6: Monitor System<br/>UC7: View Metrics<br/>UC8: Configure Alerts<br/>UC9: View Logs<br/>UC10: Manage Containers"| Monitoring
     
-    cAdvisor -->|Scrape| API1
-    cAdvisor -->|Scrape| API2
-    cAdvisor -->|Scrape| API3
-    cAdvisor -->|Metrics| Prometheus
+    cAdvisor -->|Monitor containers| Prometheus
+    
+    API1 -.->|/metrics| Prometheus
+    API2 -.->|/metrics| Prometheus
+    API3 -.->|/metrics| Prometheus
     
     Prometheus -->|Query| Grafana
     Prometheus -->|Alerts| AlertMgr
