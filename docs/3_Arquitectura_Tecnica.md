@@ -5,14 +5,10 @@
 ```mermaid
 graph TB
     subgraph Host[VirtualBox Host]
-        subgraph VM1[VM 1: NFS Server<br/>192.168.0.2]
-            ZFS[ZFS Storage<br/>tank/storage]
-            NFS_Server[NFS Server<br/>/mnt/nfs_share]
-            ZFS --> NFS_Server
-        end
+        PortFwd[Port Forwarding]
         
-        subgraph VM2[VM 2: UM Drive<br/>192.168.0.3]
-            NFS_Client[NFS Client Mount<br/>/mnt/nfs_share]
+        subgraph VM2[" "]
+            VM2Title[VM 2: UM Drive - 192.168.0.3]
             
             subgraph Docker[Docker Compose]
                 API1[FastAPI 1]
@@ -22,14 +18,20 @@ graph TB
                 Monitor[Monitoring Stack]
             end
             
-            NFS_Client --> API1
-            NFS_Client --> API2
-            NFS_Client --> API3
+            NFS_Client[NFS Client Mount<br/>/mnt/nfs_share]
+            
+            API1 --> NFS_Client
+            API2 --> NFS_Client
+            API3 --> NFS_Client
         end
         
-        NFS_Server -.->|NFS Protocol| NFS_Client
+        subgraph VM1[VM 1: NFS Server - 192.168.0.2]
+            ZFS[ZFS Storage<br/>tank/storage]
+            NFS_Server[NFS Server<br/>/mnt/nfs_share]
+            ZFS --> NFS_Server
+        end
         
-        PortFwd[Port Forwarding]
+        NFS_Client -.->|NFS Protocol| NFS_Server
         PortFwd --> VM2
     end
     
@@ -186,7 +188,6 @@ alertmanager:
 ## Fluxo de Dados
 
 ### **Upload de Ficheiro**
-
 ```mermaid
 sequenceDiagram
     participant C as Cliente
@@ -200,14 +201,13 @@ sequenceDiagram
     A->>N: Escrever ficheiro
     N->>Z: NFS write
     Z-->>N: OK
-    A->>N: Guardar metadata.json
+    A->>N: Guardar metadata (SQLite)
     N->>Z: NFS write
     Z-->>N: OK
     A-->>C: 200 OK + metadata
 ```
 
 ### **Download de Ficheiro**
-
 ```mermaid
 sequenceDiagram
     participant C as Cliente
@@ -218,7 +218,7 @@ sequenceDiagram
     
     C->>T: GET /api/files/{id}
     T->>A: Load balance
-    A->>N: Ler metadata.json
+    A->>N: Ler metadata (SQLite)
     N->>Z: NFS read
     Z-->>N: metadata
     A->>N: Ler ficheiro
@@ -226,6 +226,25 @@ sequenceDiagram
     Z-->>N: file content
     A-->>C: 200 OK + file stream
 ```
+
+### **Nota sobre Operações CRUD**
+
+Os fluxos das operações seguem a mesma lógica base:
+
+| Operação | Método | Fluxo |
+|----------|--------|-------|
+| **Create** | POST | Cliente → Traefik → FastAPI → NFS (escrita) → Metadata (insert) |
+| **Read** | GET | Cliente → Traefik → FastAPI → NFS (leitura) → Resposta |
+| **Update** | PUT | Cliente → Traefik → FastAPI → NFS (escrita) → Metadata (update) |
+| **Delete** | DELETE | Cliente → Traefik → FastAPI → NFS (remoção) → Metadata (delete) |
+
+**Diferenças:**
+- **POST:** Gera novo UUID, cria entrada na BD
+- **PUT:** Verifica se ficheiro existe (404 se não), sobrescreve conteúdo
+- **GET:** Apenas leitura, sem alteração de metadata
+- **DELETE:** Remove ficheiro físico e entrada na BD
+
+---
 
 ### **Monitorização**
 ```
@@ -242,7 +261,7 @@ sequenceDiagram
 
 ### **Dados**
 - Ficheiros: NFS share (persistente entre reboots)
-- Metadados: `metadata.json` no NFS
+- Metadados: `metadata.db` (SQLite com WAL) no NFS
 - Métricas: Prometheus volumes Docker
 
 ### **Configuração**

@@ -170,12 +170,11 @@ ab -n 1000 -c 10 http://localhost/api/health
 ---
 
 ## Validação NFS
-
 ```bash
 # VM2: Criar ficheiro via API
 curl -X POST -F "file=@test.txt" http://localhost/api/files
 
 # VM1: Verificar ficheiro existe no NFS
 ls -la /mnt/nfs_share/
-cat /mnt/nfs_share/metadata.json
+ls -la /mnt/nfs_share/metadata.db
 ```

@@ -78,16 +78,22 @@ flowchart TD
   - Traefik load balancer
   - Stack de monitorização (cAdvisor, Prometheus, Grafana, AlertManager)
   - Cliente NFS (mount em `/mnt/nfs_share`)
+
 ```mermaid
 graph LR
     NFS["NFS Server<br/>192.168.0.2<br/>/mnt/nfs_share"] -.->|NFS Protocol| Client["NFS Client<br/>192.168.0.3<br/>Mount: /mnt/nfs_share"]
     
-    Client --> API["3x FastAPI<br/>Containers"]
-    Client --> LB["Traefik LB"]
-    Client --> MON["Monitoring<br/>Stack"]
+    subgraph VM2[VM 2: UM Drive]
+        Client
+        API["3x FastAPI<br/>Containers"]
+        LB["Traefik LB"]
+        MON["Monitoring<br/>Stack"]
+    end
+    
+    API --> Client
     
     style NFS fill:#fff4e1
-    style Client fill:#e1f5ff
+    style VM2 fill:#e1f5ff
     style API fill:#e1ffe1
     style LB fill:#ffe1e1
     style MON fill:#f0e1ff

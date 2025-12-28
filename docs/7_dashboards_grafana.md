@@ -2,23 +2,24 @@
 
 ## Dashboards Configurados
 
-### Dashboard 893 - Docker & System Monitoring
+### Dashboard 893 - Docker & System Monitoring (Editada)
 Monitorização de containers e recursos do sistema.
 
-**Métricas disponíveis:**
-- CPU Usage por container
-- Memory Usage por container
-- Network I/O (tráfego entrada/saída)
-- Container Status (running/stopped/unhealthy)
-- Filesystem Usage
-- Container uptime
+**Painéis configurados:**
+- Network Traffic (total)
+- Containers (contagem: 8)
+- CPU Usage (%)
+- Sent/Received Network Traffic per Container
+- Memory Swap per Container
+- CPU Usage per Container
+- Memory Usage per Container
+- Usage memory / Remaining memory / Limit memory (tabelas)
 
 **O que mostra:**
 - 3 réplicas UM Drive API em execução
 - Traefik load balancer
 - Prometheus, Grafana, AlertManager, cAdvisor
-- Consumo de recursos em tempo real
-- Health status de cada container
+- Consumo de recursos em tempo real por container
 
 ---
 
