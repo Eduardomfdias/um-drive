@@ -199,7 +199,7 @@ sequenceDiagram
 - **Pré-condições:** Sistema disponível
 - **Fluxo Principal:**
   1. User solicita GET /api/files
-  2. Sistema lê metadata.json
+  2. Sistema lê metadata (SQLite)
   3. Retorna lista com metadados
 - **Pós-condições:** Lista exibida
 
